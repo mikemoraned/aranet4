@@ -53,18 +53,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             service.uuid, service.primary
                         );
                         for characteristic in service.characteristics {
-                            println!("  {:?}", characteristic);
-                            if characteristic.properties.contains(CharPropFlags::READ) {
+                            if format!("{:?}", characteristic.uuid).contains("f0cd1503-95da-4f4b-9ac8-aa55d312af0c") 
+                                && characteristic.properties.contains(CharPropFlags::READ) {
                                 let response = peripheral.read(&characteristic).await.expect("failed read");
                                 println!("response: {:?}", response);
-                                if format!("{:?}", characteristic.uuid).contains("f0cd1503-95da-4f4b-9ac8-aa55d312af0c") {
-                                    let co2 = u16::from_le_bytes([ response[0], response[1] ]);
-                                    let temp = u16::from_le_bytes([ response[2], response[3] ]) as f32 / 20.0;
-                                    let pressure = u16::from_le_bytes([ response[4], response[5] ]) as f32 / 10.0;
-                                    let humidity = response[6];
-                                    let battery = response[7];
-                                    println!("ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID = {}, {}, {}, {}, {}", co2, temp, pressure, humidity, battery);
-                                }
+                                let co2 = u16::from_le_bytes([ response[0], response[1] ]);
+                                let temp = u16::from_le_bytes([ response[2], response[3] ]) as f32 / 20.0;
+                                let pressure = u16::from_le_bytes([ response[4], response[5] ]) as f32 / 10.0;
+                                let humidity = response[6];
+                                let battery = response[7];
+                                println!("ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID = {}, {}, {}, {}, {}", co2, temp, pressure, humidity, battery);
                             }
                         }
                     }
