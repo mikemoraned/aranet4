@@ -5,6 +5,15 @@ use tokio::time;
 use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter, CharPropFlags};
 use btleplug::platform::Manager;
 
+#[derive(Debug)]
+struct Sample {
+    co2: u16,
+    temp: f32,
+    pressure: f32,
+    humidity: u8,
+    battery: u8
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init();
@@ -57,12 +66,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 && characteristic.properties.contains(CharPropFlags::READ) {
                                 let response = peripheral.read(&characteristic).await.expect("failed read");
                                 println!("response: {:?}", response);
-                                let co2 = u16::from_le_bytes([ response[0], response[1] ]);
-                                let temp = u16::from_le_bytes([ response[2], response[3] ]) as f32 / 20.0;
-                                let pressure = u16::from_le_bytes([ response[4], response[5] ]) as f32 / 10.0;
-                                let humidity = response[6];
-                                let battery = response[7];
-                                println!("ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID = {}, {}, {}, {}, {}", co2, temp, pressure, humidity, battery);
+                                let sample = Sample {
+                                    co2 : u16::from_le_bytes([ response[0], response[1] ]),
+                                    temp : u16::from_le_bytes([ response[2], response[3] ]) as f32 / 20.0,
+                                    pressure : u16::from_le_bytes([ response[4], response[5] ]) as f32 / 10.0,
+                                    humidity : response[6],
+                                    battery : response[7],
+                                };
+                                println!("ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID: {:?}", sample);
                             }
                         }
                     }
