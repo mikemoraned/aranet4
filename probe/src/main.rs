@@ -1,6 +1,7 @@
 #[macro_use] extern crate log;
 
 use std::error::Error;
+use env_logger::Env;
 use tokio::time;
 
 use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter, CharPropFlags};
@@ -19,8 +20,8 @@ struct Sample {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    pretty_env_logger::formatted_builder()
-        .filter_module("probe", log::LevelFilter::Info)
+    env_logger::Builder::from_env(
+        Env::default().default_filter_or("probe=info"))
         .init();
 
     let cli = cli::parse();
