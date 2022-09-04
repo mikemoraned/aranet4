@@ -3,12 +3,13 @@ use std::time::Duration;
 use duration_string::DurationString;
 use std::fmt;
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 pub struct Cli {
     #[clap(long,parse(try_from_str = parse_scan_length), default_value_t = ScanLength(Duration::from_secs(10)))]
     pub scan_length: ScanLength
 }
 
+#[derive(Debug)]
 pub struct ScanLength(pub Duration);
 
 pub fn parse() -> Cli {

@@ -1,5 +1,6 @@
 #[macro_use] extern crate log;
 
+use std::default;
 use std::error::Error;
 use env_logger::Env;
 use tokio::time;
@@ -18,21 +19,26 @@ struct Sample {
     battery: u8
 }
 
+const NAME: &str = env!("CARGO_PKG_NAME");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::Builder::from_env(
-        Env::default().default_filter_or("probe=info"))
+    let default_log_config = format!("{}=info", NAME);
+    let log_config =  Env::default().default_filter_or(default_log_config);
+    env_logger::Builder::from_env(log_config)
         .init();
 
     let cli = cli::parse();
+    let cli::ScanLength(scan_length_duration) = cli.scan_length;
+
+    info!("Running {} v{}, with {:?}", NAME, VERSION, cli);
 
     let manager = Manager::new().await?;
     let adapter_list = manager.adapters().await?;
     if adapter_list.is_empty() {
         error!("No Bluetooth adapters found");
     }
-
-    let cli::ScanLength(scan_length_duration) = cli.scan_length;
 
     for adapter in adapter_list.iter() {
         info!("Starting {:?} scan on {}...", scan_length_duration, adapter.adapter_info().await?);
