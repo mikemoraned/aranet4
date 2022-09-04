@@ -9,32 +9,7 @@ use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter, CharPropFlags
 use btleplug::platform::Manager;
 
 mod cli;
-
-#[derive(Debug)]
-struct Sample {
-    co2: u16,
-    temp: f32,
-    pressure: f32,
-    humidity: u8,
-    battery: u8
-}
-
-use std::convert::TryFrom;
-
-impl TryFrom<&Vec<u8>> for Sample {
-    type Error = &'static str;
-
-    fn try_from(value: &Vec<u8>) -> Result<Self, Self::Error> {
-        let sample = Sample {
-            co2 : u16::from_le_bytes([ value[0], value[1] ]),
-            temp : u16::from_le_bytes([ value[2], value[3] ]) as f32 / 20.0,
-            pressure : u16::from_le_bytes([ value[4], value[5] ]) as f32 / 10.0,
-            humidity : value[6],
-            battery : value[7],
-        };
-        Ok(sample)
-    }
-}
+mod sample;
 
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -106,7 +81,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     && characteristic.properties.contains(CharPropFlags::READ) {
                                     let response = peripheral.read(&characteristic).await.expect("failed read");
                                     debug!("response: {:?}", response);
-                                    let sample = Sample::try_from(&response)?;
+                                    let sample = sample::Sample::try_from(&response)?;
                                     info!("{}: ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID: {:?}", &local_name, sample);
                                 }
                             }
