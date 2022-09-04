@@ -22,6 +22,8 @@ struct Sample {
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+const ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID : &str = "f0cd1503-95da-4f4b-9ac8-aa55d312af0c";
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let default_log_config = format!("{}=info", NAME);
@@ -78,7 +80,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             service.uuid, service.primary
                         );
                         for characteristic in service.characteristics {
-                            if format!("{:?}", characteristic.uuid).contains("f0cd1503-95da-4f4b-9ac8-aa55d312af0c") 
+                            if format!("{:?}", characteristic.uuid).contains(ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID) 
                                 && characteristic.properties.contains(CharPropFlags::READ) {
                                 let response = peripheral.read(&characteristic).await.expect("failed read");
                                 debug!("response: {:?}", response);
