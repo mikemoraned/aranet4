@@ -1,9 +1,9 @@
 #[macro_use] extern crate log;
 
-use std::default;
 use std::error::Error;
 use env_logger::Env;
 use tokio::time;
+use uuid::Uuid;
 
 use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter, CharPropFlags};
 use btleplug::platform::Manager;
@@ -22,10 +22,11 @@ struct Sample {
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-const ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID : &str = "f0cd1503-95da-4f4b-9ac8-aa55d312af0c";
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    let aranet_co2_measurement_characteristic_uuid : Uuid 
+        = Uuid::parse_str("f0cd1503-95da-4f4b-9ac8-aa55d312af0c")?;
+
     let default_log_config = format!("{}=info", NAME);
     let log_config =  Env::default().default_filter_or(default_log_config);
     env_logger::Builder::from_env(log_config)
@@ -80,7 +81,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             service.uuid, service.primary
                         );
                         for characteristic in service.characteristics {
-                            if format!("{:?}", characteristic.uuid).contains(ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID) 
+                            if characteristic.uuid == aranet_co2_measurement_characteristic_uuid
                                 && characteristic.properties.contains(CharPropFlags::READ) {
                                 let response = peripheral.read(&characteristic).await.expect("failed read");
                                 debug!("response: {:?}", response);
