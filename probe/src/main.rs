@@ -1,6 +1,7 @@
 #[macro_use] extern crate log;
 
 use std::error::Error;
+use std::time::Duration;
 use env_logger::Env;
 use tokio::time;
 // use uuid::Uuid;
@@ -74,10 +75,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!("connected!");
 
     let services = &discovered_device.device.discover_services().await?;
+    tokio::time::sleep(Duration::from_secs(5)).await;
     for service in services {
         println!("{:?}",service);
         if service.uuid() == aranet_service_uuid {
             let characteristics = service.discover_characteristics().await?;
+            tokio::time::sleep(Duration::from_secs(5)).await;
             for characteristic in characteristics {
                 println!("{:?}",characteristic);
                 if characteristic.uuid() == aranet_co2_measurement_characteristic_uuid {
