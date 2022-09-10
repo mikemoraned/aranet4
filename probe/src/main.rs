@@ -38,22 +38,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let adapter = Adapter::default().await.ok_or("Bluetooth adapter not found")?;
     adapter.wait_available().await?;
 
-    info!("starting scan");
+    // info!("starting scan");
     let services = vec![aranet_service_uuid];
-    let mut scan = adapter.scan(&services).await?;
-    info!("scan started");
+    // let mut scan = adapter.scan(&services).await?;
+    // info!("scan started");
 
-    while let Some(discovered_device) = scan.next().await {
-        info!(
-            "{}{}: {:?}",
-            discovered_device.device.name().as_deref().unwrap_or("(unknown)"),
-            discovered_device
-                .rssi
-                .map(|x| format!(" ({}dBm)", x))
-                .unwrap_or_default(),
-            discovered_device.adv_data.services
-        );
-    }
+    // while let Some(discovered_device) = scan.next().await {
+    //     info!(
+    //         "{}{}: {:?}",
+    //         discovered_device.device.name().as_deref().unwrap_or("(unknown)"),
+    //         discovered_device
+    //             .rssi
+    //             .map(|x| format!(" ({}dBm)", x))
+    //             .unwrap_or_default(),
+    //         discovered_device.adv_data.services
+    //     );
+    //     break;
+    // }
+
+    let discovered_device = {
+        info!("starting scan");
+        let mut scan = adapter.scan(&services).await?;
+        info!("scan started");
+        scan.next().await.ok_or("scan terminated")? // this will never timeout
+    };
+
+    info!("{:?} {:?}", discovered_device.rssi, discovered_device.adv_data);
+    adapter.connect_device(&discovered_device.device).await?; // this will never timeout
+    info!("connected!");
 
     // let manager = Manager::new().await?;
     // let adapter_list = manager.adapters().await?;
