@@ -3,7 +3,9 @@
 use std::error::Error;
 use env_logger::Env;
 use tokio::time;
-use uuid::Uuid;
+// use uuid::Uuid;
+use bluest::Uuid;
+use bluest::btuuid::BluetoothUuidExt;
 
 // use btleplug::api::{Central, Manager as _, Peripheral, ScanFilter, CharPropFlags};
 // use btleplug::platform::Manager;
@@ -20,10 +22,14 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let aranet_local_name_prefix = "Aranet4";
+    // let aranet_service_uuid : Uuid 
+    //     = Uuid::parse_str("f0cd1400-95da-4f4b-9ac8-aa55d312af0c")?;
+    // let aranet_co2_measurement_characteristic_uuid : Uuid 
+    //     = Uuid::parse_str("f0cd1503-95da-4f4b-9ac8-aa55d312af0c")?;
     let aranet_service_uuid : Uuid 
-        = Uuid::parse_str("f0cd1400-95da-4f4b-9ac8-aa55d312af0c")?;
+        = Uuid::from_u128(0xf0cd1400_95da_4f4b_9ac8_aa55d312af0c);
     let aranet_co2_measurement_characteristic_uuid : Uuid 
-        = Uuid::parse_str("f0cd1503-95da-4f4b-9ac8-aa55d312af0c")?;
+        = Uuid::from_u128(0xf0cd1503_95da_4f4b_9ac8_aa55d312af0c);
 
     let default_log_config = format!("{}=info", NAME);
     let log_config =  Env::default().default_filter_or(default_log_config);
@@ -39,7 +45,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     adapter.wait_available().await?;
 
     // info!("starting scan");
-    let services = vec![aranet_service_uuid];
+    let service_uuids = vec![aranet_service_uuid];
     // let mut scan = adapter.scan(&services).await?;
     // info!("scan started");
 
@@ -58,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let discovered_device = {
         info!("starting scan");
-        let mut scan = adapter.scan(&services).await?;
+        let mut scan = adapter.scan(&service_uuids).await?;
         info!("scan started");
         scan.next().await.ok_or("scan terminated")? // this will never timeout
     };
@@ -66,6 +72,36 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!("{:?} {:?}", discovered_device.rssi, discovered_device.adv_data);
     adapter.connect_device(&discovered_device.device).await?; // this will never timeout
     info!("connected!");
+
+    let services = &discovered_device.device.discover_services().await?;
+    for service in services {
+        println!("{:?}",service);
+        if service.uuid() == aranet_service_uuid {
+            let characteristics = service.discover_characteristics().await?;
+            for characteristic in characteristics {
+                println!("{:?}",characteristic);
+                if characteristic.uuid() == aranet_co2_measurement_characteristic_uuid {
+                    println!("co2");
+                    let response = characteristic.read().await?;
+                    debug!("response: {:?}", response);
+                    let sample = sample::Sample::try_from(&response)?;
+                    info!("ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID: {:?}", sample);
+                }
+            }
+        }
+    }
+
+
+
+    // let service = match &discovered_device.device
+    //     .discover_services_with_uuid(aranet_co2_measurement_characteristic_uuid)
+    //     .await?
+    //     .get(0)
+    // {
+    //     Some(service) => service.clone(),
+    //     None => return Err("service not found".into()),
+    // };
+    // info!("found co2 service");
 
     // let manager = Manager::new().await?;
     // let adapter_list = manager.adapters().await?;
