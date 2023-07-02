@@ -45,54 +45,58 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let adapter = Adapter::default().await.ok_or("Bluetooth adapter not found")?;
     adapter.wait_available().await?;
 
-    // info!("starting scan");
+    info!("starting scan");
     let service_uuids = vec![aranet_service_uuid];
-    // let mut scan = adapter.scan(&services).await?;
-    // info!("scan started");
+    let mut scan = adapter.scan(&service_uuids).await?;
+    info!("scan started");
 
-    // while let Some(discovered_device) = scan.next().await {
-    //     info!(
-    //         "{}{}: {:?}",
-    //         discovered_device.device.name().as_deref().unwrap_or("(unknown)"),
-    //         discovered_device
-    //             .rssi
-    //             .map(|x| format!(" ({}dBm)", x))
-    //             .unwrap_or_default(),
-    //         discovered_device.adv_data.services
-    //     );
-    //     break;
-    // }
-
-    let discovered_device = {
-        info!("starting scan");
-        let mut scan = adapter.scan(&service_uuids).await?;
-        info!("scan started");
-        scan.next().await.ok_or("scan terminated")? // this will never timeout
-    };
-
-    info!("{:?} {:?}", discovered_device.rssi, discovered_device.adv_data);
-    adapter.connect_device(&discovered_device.device).await?; // this will never timeout
-    info!("connected!");
-
-    let services = &discovered_device.device.discover_services().await?;
-    tokio::time::sleep(Duration::from_secs(5)).await;
-    for service in services {
-        println!("{:?}",service);
-        if service.uuid() == aranet_service_uuid {
-            let characteristics = service.discover_characteristics().await?;
-            tokio::time::sleep(Duration::from_secs(5)).await;
-            for characteristic in characteristics {
-                println!("{:?}",characteristic);
-                if characteristic.uuid() == aranet_co2_measurement_characteristic_uuid {
-                    println!("co2");
-                    let response = characteristic.read().await?;
-                    debug!("response: {:?}", response);
-                    let sample = sample::Sample::try_from(&response)?;
-                    info!("ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID: {:?}", sample);
-                }
-            }
+    while let Some(discovered_device) = scan.next().await {
+        info!(
+            "{}{}: {:?}",
+            discovered_device.device.name().as_deref().unwrap_or("(unknown)"),
+            discovered_device
+                .rssi
+                .map(|x| format!(" ({}dBm)", x))
+                .unwrap_or_default(),
+            discovered_device.adv_data.services
+        );
+        adapter.connect_device(&discovered_device.device).await?;
+        let services = discovered_device.device.discover_services_with_uuid(aranet_service_uuid).await?;
+        for service in services {
+            println!("{:?}",service);
         }
     }
+
+    // let discovered_device = {
+    //     info!("starting scan");
+    //     let mut scan = adapter.scan(&service_uuids).await?;
+    //     info!("scan started");
+    //     scan.next().await.ok_or("scan terminated")? // this will never timeout
+    // };
+
+    // info!("{:?} {:?}", discovered_device.rssi, discovered_device.adv_data);
+    // adapter.connect_device(&discovered_device.device).await?; // this will never timeout
+    // info!("connected!");
+
+    // let services = &discovered_device.device.discover_services().await?;
+    // tokio::time::sleep(Duration::from_secs(5)).await;
+    // for service in services {
+    //     println!("{:?}",service);
+    //     if service.uuid() == aranet_service_uuid {
+    //         let characteristics = service.discover_characteristics().await?;
+    //         tokio::time::sleep(Duration::from_secs(5)).await;
+    //         for characteristic in characteristics {
+    //             println!("{:?}",characteristic);
+    //             if characteristic.uuid() == aranet_co2_measurement_characteristic_uuid {
+    //                 println!("co2");
+    //                 let response = characteristic.read().await?;
+    //                 debug!("response: {:?}", response);
+    //                 let sample = sample::Sample::try_from(&response)?;
+    //                 info!("ARANET_CO2_MEASUREMENT_CHARACTERISTIC_UUID: {:?}", sample);
+    //             }
+    //         }
+    //     }
+    // }
 
 
 
