@@ -18,7 +18,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 async fn main() -> Result<(), Box<dyn Error>> {
     let aranet_local_name_prefix = "Aranet4";
     let aranet_service_uuid : Uuid 
-        = Uuid::parse_str("f0cd1400-95da-4f4b-9ac8-aa55d312af0c")?;
+        = Uuid::parse_str("0000fce0-0000-1000-8000-00805f9b34fb")?;
     let aranet_co2_measurement_characteristic_uuid : Uuid 
         = Uuid::parse_str("f0cd1503-95da-4f4b-9ac8-aa55d312af0c")?;
 
