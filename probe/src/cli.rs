@@ -5,11 +5,11 @@ use std::fmt;
 
 #[derive(Parser, Debug)]
 pub struct Cli {
-    #[clap(long,parse(try_from_str = parse_scan_length), default_value_t = ScanLength(Duration::from_secs(10)))]
+    #[clap(long, value_parser = parse_scan_length, default_value_t = ScanLength(Duration::from_secs(10)))]
     pub scan_length: ScanLength
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ScanLength(pub Duration);
 
 pub fn parse() -> Cli {
